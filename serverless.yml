@@ -1,0 +1,74 @@
+# Welcome to Serverless!
+#
+# This file is the main config file for your service.
+# It's very minimal at this point and uses default values.
+# You can always add more config options for more control.
+# We've included some commented out config examples here.
+# Just uncomment any of them to get that config option.
+#
+# For full config options, check the docs:
+#    docs.serverless.com
+#
+# Happy Coding!
+
+service: thumbnail-generator # NOTE: update this with your service name
+
+# You can pin your service to only deploy with a specific Serverless version
+# Check out our docs for more details
+# frameworkVersion: "=X.X.X"
+
+provider:
+  name: aws
+  runtime: nodejs8.10
+  profile: alexdiv87
+  region: us-west-2
+
+# you can overwrite defaults here
+
+# you can add statements to the Lambda function's IAM Role here
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "S3:*"
+      Resource:
+        - "*"
+
+# custom data 
+custom:
+  pubTmpBucket: alexdivito-public-temp
+  appImgBucket: alexdivito-public-images
+
+# you can define service wide environment variables here
+
+
+# lambda functions
+functions:
+  s3-thumbnail-generator:
+    handler: handler.s3ThumbnailHandler
+    memorySize: 128
+    timeout: 3
+    environment:
+      THUMB_SIZE: "128"
+      APP_IMG_BUCKET: ${self:custom.appImgBucket}
+    events:
+      - s3:
+          bucket: ${self:custom.pubTmpBucket}
+          event: s3:ObjectCreated:*
+          rules:
+            - suffix: .png
+
+resources:
+  Resources:
+    PublicTempUploadsBucket:
+      Type: AWS::S3::Bucket
+      Properties:
+        BucketName: ${self:custom.appImgBucket}
+
+package:
+  exclude:
+    - node_modules/** # no need to add this yourself, this plugin does it for you
+
+# plugins
+plugins:
+  - serverless-plugin-include-dependencies
+        
